@@ -31,7 +31,7 @@ def take_snap(filesystem, _type):
     logger = logging.getLogger(__name__)
     now = datetime.now
 
-    snapname = lambda _type: 'pyznap_{:s}_{:s}'.format(now().strftime('%Y-%m-%d_%H:%M:%S'), _type)
+    snapname = lambda _type: '{:s}_pyznap_{:s}'.format(_type, now().strftime('%Y-%m-%d_%H:%M:%S'))
 
     logger.info('Taking snapshot {}@{:s}...'.format(filesystem, snapname(_type)))
     try:
@@ -72,11 +72,20 @@ def take_filesystem(filesystem, conf):
     # categorize snapshots
     for snap in fs_snapshots:
         # Ignore snapshots not taken with pyznap or sanoid
-        if not snap.name.split('@')[1].startswith(('pyznap', 'autosnap')):
+        build_type = None
+        suffix_name = snap.name.split('@')[1]
+        if suffix_name.find('pyznap') > -1:
+            build_type = 'pyznap'
+        if suffix_name.find('autosnap') > -1:
+            build_type = 'autosnap'
+        if build_type is None:
             continue
         try:
-            _date, _time, snap_type = snap.name.split('_')[-3:]
-            snap_time =  datetime.strptime('{:s}_{:s}'.format(_date, _time), '%Y-%m-%d_%H:%M:%S')
+            if build_type == 'autosnap':
+                _date, _time, snap_type = snap.name.split('_')[-3:]
+            else:
+                snap_type, _, _date, _time = suffix_name.split('_')
+            snap_time = datetime.strptime('{:s}_{:s}'.format(_date, _time), '%Y-%m-%d_%H:%M:%S')
             snapshots[snap_type].append((snap, snap_time))
         except (ValueError, KeyError):
             continue

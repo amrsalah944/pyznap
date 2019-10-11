@@ -66,10 +66,19 @@ def clean_filesystem(filesystem, conf):
     # categorize snapshots
     for snap in fs_snapshots:
         # Ignore snapshots not taken with pyznap or sanoid
-        if not snap.name.split('@')[1].startswith(('pyznap', 'autosnap')):
+        build_type = None
+        suffix_name = snap.name.split('@')[1]
+        if suffix_name.find('pyznap') > -1:
+            build_type = 'pyznap'
+        if suffix_name.find('autosnap') > -1:
+            build_type = 'autosnap'
+        if build_type is None:
             continue
         try:
-            snap_type = snap.name.split('_')[-1]
+            if build_type == 'autosnap':
+                snap_type = snap.name.split('_')[-1]
+            else:
+                snap_type = suffix_name.split('_')[0]
             snapshots[snap_type].append(snap)
         except (ValueError, KeyError):
             continue
